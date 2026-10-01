@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DonorsRouteImport } from './routes/donors'
+import { Route as MatchingRouteImport } from './routes/matching'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonorsRoute = DonorsRouteImport.update({
+  id: '/donors',
+  path: '/donors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchingRoute = MatchingRouteImport.update({
+  id: '/matching',
+  path: '/matching',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/donors': typeof DonorsRoute
+  '/matching': typeof MatchingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/donors': typeof DonorsRoute
+  '/matching': typeof MatchingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/donors': typeof DonorsRoute
+  '/matching': typeof MatchingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/dashboard' | '/donors' | '/matching'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/dashboard' | '/donors' | '/matching'
+  id: '__root__' | '/' | '/dashboard' | '/donors' | '/matching'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  DonorsRoute: typeof DonorsRoute
+  MatchingRoute: typeof MatchingRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donors': {
+      id: '/donors'
+      path: '/donors'
+      fullPath: '/donors'
+      preLoaderRoute: typeof DonorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matching': {
+      id: '/matching'
+      path: '/matching'
+      fullPath: '/matching'
+      preLoaderRoute: typeof MatchingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  DonorsRoute: DonorsRoute,
+  MatchingRoute: MatchingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
