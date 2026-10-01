@@ -13,8 +13,18 @@ import type {
  * When the backend is unreachable (e.g. the hosted demo), every call
  * transparently falls back to local demo data so the UI stays usable.
  */
-export const API_BASE_URL =
-  (import.meta.env["VITE_HUMAPULSE_API_URL"] as string | undefined) ?? "http://127.0.0.1:8000";
+const env = import.meta.env as Record<string, string | undefined>;
+
+/** Backend URL: set VITE_API_BASE_URL in production (e.g. https://api.humapulse.com). */
+export const API_BASE_URL = (
+  env["VITE_API_BASE_URL"] ??
+  env["VITE_HUMAPULSE_API_URL"] ??
+  "http://127.0.0.1:8000"
+).replace(/\/$/, "");
+
+/** Mock fallback toggle: VITE_USE_MOCK_DATA=always | fallback (default) | never. */
+const MOCK_MODE = (env["VITE_USE_MOCK_DATA"] ?? "fallback").toLowerCase();
+const API_TIMEOUT_MS = Number(env["VITE_API_TIMEOUT_MS"] ?? 6000);
 
 export interface ApiEnvelope<T> {
   success: boolean;
@@ -31,7 +41,14 @@ export class ApiError extends Error {
 }
 
 /** Set once the backend proves unreachable, so we stop retrying every query. */
-let backendOffline = false;
+let backendOffline = MOCK_MODE === "always";
+
+function friendlyMessage(status: number, message: string) {
+  if (status >= 500) return "The HumaPulse server had a problem. Please try again shortly.";
+  if (status === 404) return "That record could not be found.";
+  if (status === 401 || status === 403) return "You don't have permission to do that.";
+  return message;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
   // Never call the local backend during server rendering — the browser owns it.
@@ -42,16 +59,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
       headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
       ...init,
     });
   } catch {
-    backendOffline = true;
+    if (MOCK_MODE !== "never") backendOffline = true;
     throw new ApiError("Backend unreachable", 503);
   }
   const body = (await res.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!res.ok || !body?.success) {
-    throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status);
+    const status = res.ok ? 400 : res.status;
+    const message = friendlyMessage(status, body?.message ?? `Request failed (${status})`);
+    // 5xx are surfaced globally; 4xx (e.g. duplicate request) are shown by the form that sent them.
+    if (status >= 500) {
+      const { toast } = await import("sonner");
+      toast.error(message, { id: `api-${status}` });
+    }
+    throw new ApiError(message, status);
   }
   return body;
 }
