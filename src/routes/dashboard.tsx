@@ -1,22 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Droplet, HeartHandshake, Percent, Users } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { lazy, Suspense } from "react";
 
 import { AppShell } from "@/components/humapulse/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchAnalytics } from "@/lib/humapulse-api";
+
+// Charts (recharts) are code-split so the dashboard shell loads instantly.
+const DemandChart = lazy(() =>
+  import("@/components/humapulse/dashboard-charts").then((m) => ({ default: m.DemandChart })),
+);
+const UrgencyChart = lazy(() =>
+  import("@/components/humapulse/dashboard-charts").then((m) => ({ default: m.UrgencyChart })),
+);
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -37,8 +34,6 @@ export const Route = createFileRoute("/dashboard")({
   }),
   component: DashboardPage,
 });
-
-const urgencyColors = ["var(--color-chart-4)", "var(--color-urgent)", "var(--color-critical)"];
 
 function DashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ["analytics"], queryFn: fetchAnalytics });
@@ -85,48 +80,15 @@ function DashboardPage() {
 
           <div className="mt-6 grid gap-5 lg:grid-cols-2">
             <ChartCard title="Demand breakdown by blood group">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.demand_by_blood_group}>
-                  <XAxis dataKey="blood_group" tickLine={false} axisLine={false} fontSize={12} />
-                  <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                  <Tooltip
-                    cursor={{ fill: "var(--color-muted)" }}
-                    contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                    }}
-                  />
-                  <Bar dataKey="requests" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
+                <DemandChart data={data.demand_by_blood_group} />
+              </Suspense>
             </ChartCard>
 
             <ChartCard title="Requests by urgency level">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={data.requests_by_urgency}
-                    dataKey="count"
-                    nameKey="urgency"
-                    innerRadius={70}
-                    outerRadius={110}
-                    paddingAngle={3}
-                  >
-                    {data.requests_by_urgency.map((_, i) => (
-                      <Cell key={i} fill={urgencyColors[i % urgencyColors.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
+                <UrgencyChart data={data.requests_by_urgency} />
+              </Suspense>
             </ChartCard>
           </div>
         </>
