@@ -30,12 +30,25 @@ export class ApiError extends Error {
   }
 }
 
+/** Set once the backend proves unreachable, so we stop retrying every query. */
+let backendOffline = false;
+
 async function request<T>(path: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    signal: AbortSignal.timeout(6000),
-    ...init,
-  });
+  // Never call the local backend during server rendering — the browser owns it.
+  if (typeof window === "undefined") throw new ApiError("Backend unavailable during SSR", 503);
+  if (backendOffline) throw new ApiError("Backend unreachable", 503);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      signal: AbortSignal.timeout(6000),
+      ...init,
+    });
+  } catch {
+    backendOffline = true;
+    throw new ApiError("Backend unreachable", 503);
+  }
   const body = (await res.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!res.ok || !body?.success) {
     throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status);
