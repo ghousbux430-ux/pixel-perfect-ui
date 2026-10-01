@@ -146,9 +146,9 @@ export async function fetchAnalytics(): Promise<Analytics> {
 }
 
 export async function fetchDonors(filters: {
-  blood_group?: string;
-  city?: string;
-  available?: string;
+  blood_group?: string | undefined;
+  city?: string | undefined;
+  available?: string | undefined;
 }): Promise<Donor[]> {
   try {
     const params = new URLSearchParams();

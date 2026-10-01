@@ -19,9 +19,9 @@ export interface BloodRequest {
   status: RequestStatus;
   required_before: string;
   created_at: string;
-  notes?: string;
-  latitude?: number;
-  longitude?: number;
+  notes?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
 }
 
 export interface DonorMatch {
@@ -31,7 +31,7 @@ export interface DonorMatch {
   match_score: number;
   distance_km: number;
   eligible: boolean;
-  last_donation?: string;
+  last_donation?: string | undefined;
   city: string;
 }
 
@@ -43,7 +43,7 @@ export interface Donor {
   available: boolean;
   verified: boolean;
   total_donations: number;
-  last_donation?: string;
+  last_donation?: string | undefined;
 }
 
 export interface Analytics {
@@ -62,16 +62,16 @@ export interface CreateRequestPayload {
   units_required: number;
   hospital_name: string;
   city: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
   required_before: string;
   urgency: Urgency;
-  notes?: string;
+  notes?: string | undefined;
 }
 
 export interface RequestFilters {
-  blood_group?: string;
-  city?: string;
-  urgency?: string;
-  status?: string;
+  blood_group?: string | undefined;
+  city?: string | undefined;
+  urgency?: string | undefined;
+  status?: string | undefined;
 }
